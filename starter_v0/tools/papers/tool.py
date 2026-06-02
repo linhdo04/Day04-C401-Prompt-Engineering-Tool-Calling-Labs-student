@@ -112,6 +112,13 @@ def arxiv_search(
     published_before: str | None = None,
 ) -> dict[str, Any]:
     try:
+        if not (query or "").strip():
+            return {
+                "tool": "arxiv_search",
+                "awaiting_user": True,
+                "question": "Bạn muốn tìm top bài báo khoa học trong năm nay về chủ đề hoặc lĩnh vực nào?",
+                "missing_fields": ["query"],
+            }
         max_results = max(1, min(int(max_results or 5), 10))
         sort_by = sort_by if sort_by in {"relevance", "lastUpdatedDate", "submittedDate"} else "relevance"
         if year not in (None, ""):
