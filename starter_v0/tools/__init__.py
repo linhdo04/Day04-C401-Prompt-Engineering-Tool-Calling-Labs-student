@@ -17,6 +17,10 @@ from .policy.tool import search_company_policy
 from .social_search.tool import search_tweets
 from .send.tool import send_telegram
 from .lookup.tool import web_search
+from .research_digest.tool import research_digest
+from .source_quality.tool import source_quality
+from .telegram_preview.tool import telegram_preview
+from .trend_compare.tool import trend_compare
 
 
 # NOTE (starter_v0): tool names here are intentionally vague. These keys are the
@@ -35,6 +39,10 @@ TOOL_FUNCTIONS = {
     "policy": search_company_policy,
     "papers": arxiv_search,
     "paper_text": get_arxiv_paper_text,
+    "research_digest": research_digest,
+    "source_quality": source_quality,
+    "trend_compare": trend_compare,
+    "telegram_preview": telegram_preview,
 }
 
 
@@ -51,4 +59,3 @@ def to_openai_tools(declarations: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "parameters": item.get("parameters", {"type": "object", "properties": {}}),
         },
     } for item in declarations]
-

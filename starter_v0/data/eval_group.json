@@ -1,7 +1,268 @@
 {
   "dataset_id": "day04_v2_research_group",
-  "dataset_role": "group",
-  "description": "Case do NHÓM tự viết thêm để cover thêm trường hợp. Mỗi case cần: id, phase='B', query HOẶC turns, failure_type (thuộc allowed_failure_types), và expect (tool_calls[...] hoặc no_tool=true). Nên kèm metadata.what_it_tests.",
-  "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "dataset_role": "team_authored_bonus_eval",
+  "description": "Team-authored cases covering bonus research workflow tools, Telegram preview/confirmation, and multi-turn context handling.",
+  "cases": [
+    {
+      "id": "G01_research_digest_single",
+      "phase": "B",
+      "query": "Từ các item đã có, tạo research digest cho executives với headline 'AI market brief': item 1 title OpenAI launches model source openai.com url https://openai.com/news summary New model launch; item 2 title Anthropic research source anthropic.com url https://anthropic.com/research summary Safety research update.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "research_digest",
+            "args": {
+              "headline": "AI market brief",
+              "audience": "executives"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Already collected evidence should go to research_digest, not lookup/fetch."
+      }
+    },
+    {
+      "id": "G02_source_quality_single",
+      "phase": "B",
+      "query": "Kiểm tra chất lượng nguồn cho 3 item đã thu thập, cần ít nhất 3 nguồn khác nhau và bắt buộc có URL.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "source_quality",
+            "args": {
+              "min_sources": 3,
+              "require_urls": true
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Citation readiness/source-diversity request should use source_quality."
+      }
+    },
+    {
+      "id": "G03_trend_compare_single",
+      "phase": "B",
+      "query": "So sánh trend giữa web_items và social_items đã có về chủ đề robotics, lấy top 4 theme.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "trend_compare",
+            "args": {
+              "topic": "robotics",
+              "top_k": 4
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Comparing already collected web and social evidence should use trend_compare."
+      }
+    },
+    {
+      "id": "G04_telegram_preview_single",
+      "phase": "B",
+      "query": "Tạo preview Telegram từ markdown này, chưa gửi: **AI update**\\n- OpenAI release. Tiêu đề là Daily AI, giới hạn 500 ký tự.",
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "telegram_preview",
+            "args": {
+              "title": "Daily AI",
+              "max_chars": 500
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Preview/draft Telegram request should not call send."
+      }
+    },
+    {
+      "id": "G05_send_confirmation_single",
+      "phase": "B",
+      "query": "Gửi bản tin AI này lên Telegram giúp mình.",
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Telegram send action requires confirmation before send."
+      }
+    },
+    {
+      "id": "G06_multiturn_digest_missing_items",
+      "phase": "B",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tạo research digest cho executives"
+        },
+        {
+          "role": "user",
+          "content": "Mình chưa đưa item nào cả"
+        },
+        {
+          "role": "user",
+          "content": "Vậy hỏi mình cần cung cấp item gì"
+        }
+      ],
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "text"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Missing item list for local digest should ask for evidence instead of inventing items."
+      }
+    },
+    {
+      "id": "G07_multiturn_send_to_preview",
+      "phase": "B",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Đăng bản tin này lên Telegram"
+        },
+        {
+          "role": "user",
+          "content": "Khoan, chỉ tạo preview thôi"
+        },
+        {
+          "role": "user",
+          "content": "Dùng tiêu đề Daily AI và đừng gửi"
+        }
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "telegram_preview",
+            "args": {
+              "title": "Daily AI"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Latest-turn correction from send to preview should override prior send request."
+      }
+    },
+    {
+      "id": "G08_multiturn_compare_topic_carryover",
+      "phase": "B",
+      "turns": [
+        {
+          "role": "user",
+          "content": "So sánh web_items và social_items đã có về OpenAI"
+        },
+        {
+          "role": "user",
+          "content": "Lấy 3 theme thôi"
+        },
+        {
+          "role": "user",
+          "content": "Vẫn chủ đề OpenAI nhé"
+        }
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "trend_compare",
+            "args": {
+              "topic": "OpenAI",
+              "top_k": 3
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Carry topic and corrected top_k into trend_compare."
+      }
+    },
+    {
+      "id": "G09_multiturn_source_quality_constraints",
+      "phase": "B",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Kiểm tra source quality cho các item đã có"
+        },
+        {
+          "role": "user",
+          "content": "Ít nhất 4 nguồn khác nhau"
+        },
+        {
+          "role": "user",
+          "content": "Và URL là bắt buộc"
+        }
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "source_quality",
+            "args": {
+              "min_sources": 4,
+              "require_urls": true
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Carry source-quality constraints across turns."
+      }
+    },
+    {
+      "id": "G10_multiturn_confirm_before_send",
+      "phase": "B",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Chuẩn bị bản tin AI để gửi Telegram"
+        },
+        {
+          "role": "user",
+          "content": "Nội dung là: AI update hôm nay"
+        },
+        {
+          "role": "user",
+          "content": "Trước khi gửi thì hỏi mình xác nhận"
+        }
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Even with content supplied, latest turn asks for confirmation before send."
+      }
+    }
+  ]
 }
