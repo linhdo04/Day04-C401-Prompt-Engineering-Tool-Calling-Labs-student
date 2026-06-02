@@ -27,18 +27,64 @@ PROVIDER_LABELS = {
     "gemini": "Gemini",
 }
 
+LIGHT_THEME = {
+    "bg": "#f6f7fb",
+    "surface": "#ffffff",
+    "ink": "#172033",
+    "muted": "#667085",
+    "border": "#e3e8ef",
+    "accent": "#2563eb",
+    "header_bg": "rgba(246, 247, 251, 0.82)",
+    "shadow": "rgba(15, 23, 42, 0.04)",
+    "focus_ring": "rgba(37, 99, 235, 0.12)",
+}
+
+DARK_THEME = {
+    "bg": "#0e1117",
+    "surface": "#171b23",
+    "ink": "#e8edf7",
+    "muted": "#9aa7bd",
+    "border": "#2d3442",
+    "accent": "#60a5fa",
+    "header_bg": "rgba(14, 17, 23, 0.82)",
+    "shadow": "rgba(0, 0, 0, 0.28)",
+    "focus_ring": "rgba(96, 165, 250, 0.18)",
+}
+
+
+def css_theme_vars(theme: dict[str, str]) -> str:
+    return "\n".join(
+        [
+            f"  --lab-bg: {theme['bg']};",
+            f"  --lab-surface: {theme['surface']};",
+            f"  --lab-ink: {theme['ink']};",
+            f"  --lab-muted: {theme['muted']};",
+            f"  --lab-border: {theme['border']};",
+            f"  --lab-accent: {theme['accent']};",
+            f"  --lab-header-bg: {theme['header_bg']};",
+            f"  --lab-shadow: {theme['shadow']};",
+            f"  --lab-focus-ring: {theme['focus_ring']};",
+        ]
+    )
+
 
 def inject_styles() -> None:
-    st.markdown(
-        """
+    theme_type = getattr(st.context.theme, "type", None)
+    active_theme = DARK_THEME if theme_type == "dark" else LIGHT_THEME
+    css = """
 <style>
 :root {
-  --lab-bg: #f6f7fb;
-  --lab-surface: #ffffff;
-  --lab-ink: #172033;
-  --lab-muted: #667085;
-  --lab-border: #e3e8ef;
-  --lab-accent: #2563eb;
+__ACTIVE_THEME_VARS__
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+__DARK_THEME_VARS__
+  }
+}
+
+[data-theme="dark"] {
+__DARK_THEME_VARS__
 }
 
 .stApp {
@@ -47,7 +93,7 @@ def inject_styles() -> None:
 }
 
 [data-testid="stHeader"] {
-  background: rgba(246, 247, 251, 0.82);
+  background: var(--lab-header-bg);
   backdrop-filter: blur(10px);
 }
 
@@ -88,25 +134,27 @@ div[data-testid="stChatMessage"] {
   background: var(--lab-surface);
   border: 1px solid var(--lab-border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px var(--lab-shadow);
 }
 
 [data-testid="stChatInput"] > div {
   background: var(--lab-surface);
   border: 1px solid var(--lab-border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px var(--lab-shadow);
 }
 
 [data-testid="stChatInput"] > div:focus-within {
   border-color: var(--lab-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px var(--lab-focus-ring);
 }
 
 [data-testid="stChatInput"] textarea,
 [data-testid="stChatInput"] [contenteditable="true"] {
   background: transparent !important;
   box-shadow: none !important;
+  caret-color: var(--lab-ink) !important;
+  color: var(--lab-ink) !important;
 }
 
 [data-testid="stChatInput"] textarea::placeholder {
@@ -128,12 +176,24 @@ div[data-testid="stChatMessage"] {
 .stTextArea textarea,
 .stNumberInput input,
 div[data-baseweb="select"] > div {
+  background-color: var(--lab-surface) !important;
   border-radius: 8px;
+  border-color: var(--lab-border) !important;
+  color: var(--lab-ink) !important;
+}
+
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder,
+.stNumberInput input::placeholder {
+  color: var(--lab-muted) !important;
 }
 
 .stButton > button,
 .stDownloadButton > button {
+  background: var(--lab-surface);
+  border-color: var(--lab-border);
   border-radius: 8px;
+  color: var(--lab-ink);
   font-weight: 600;
 }
 
@@ -168,7 +228,11 @@ hr {
   margin: 1.25rem 0;
 }
 </style>
-""",
+"""
+    st.markdown(
+        css.replace("__ACTIVE_THEME_VARS__", css_theme_vars(active_theme)).replace(
+            "__DARK_THEME_VARS__", css_theme_vars(DARK_THEME)
+        ),
         unsafe_allow_html=True,
     )
 
