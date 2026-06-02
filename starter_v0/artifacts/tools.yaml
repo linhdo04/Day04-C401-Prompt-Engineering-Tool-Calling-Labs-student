@@ -90,13 +90,16 @@ tools:
       required: [query]
 
   - name: papers
-    description: "Search arXiv for research papers/preprints by topic. Use for paper discovery, not for reading a specific arXiv ID."
+    description: "Search arXiv for research papers/preprints by topic. Use for paper discovery, not for reading a specific arXiv ID. If the user says this year/năm nay, pass the current year in year. If they ask for recent/gần đây, use sort_by=lastUpdatedDate or submittedDate."
     parameters:
       type: object
       properties:
-        query: {type: string, default: "", description: "Paper search query."}
+        query: {type: string, default: "", description: "Paper search query. Must include the requested research topic; do not leave empty unless the user explicitly asks for all arXiv papers."}
         max_results: {type: integer, default: 5, description: "Number of papers."}
         sort_by: {type: string, enum: [relevance, lastUpdatedDate, submittedDate], default: "relevance", description: "Sort mode."}
+        year: {type: integer, description: "Publication/submission year filter, e.g. 2026 for this year/năm nay."}
+        published_after: {type: string, description: "Optional inclusive lower bound for arXiv submitted date in YYYY-MM-DD format."}
+        published_before: {type: string, description: "Optional inclusive upper bound for arXiv submitted date in YYYY-MM-DD format."}
       required: [query]
 
   - name: paper_text

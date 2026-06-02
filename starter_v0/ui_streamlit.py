@@ -11,6 +11,7 @@ import streamlit as st
 from chat import run_model_tool_loop
 from env_loader import load_lab_env
 from providers import make_provider
+from runtime_context import append_runtime_context
 from tools import TOOL_FUNCTIONS, load_tool_declarations, to_openai_tools
 from versioning import artifact_version_dict, build_artifact_version
 
@@ -377,7 +378,7 @@ with left:
         path = transcript_path(version, provider_name)
         try:
             with st.spinner("Running agent and tools..."):
-                system_prompt = prompt_file.read_text(encoding="utf-8")
+                system_prompt = append_runtime_context(prompt_file.read_text(encoding="utf-8"))
                 tool_declarations = load_tool_declarations(tools_file)
                 openai_tools = to_openai_tools(tool_declarations)
                 provider = make_provider(provider_name)

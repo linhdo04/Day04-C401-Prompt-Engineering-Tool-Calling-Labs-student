@@ -59,12 +59,65 @@ def _entry_text(entry: ET.Element, path: str, namespaces: dict[str, str]) -> str
     return (node.text or "").strip() if node is not None and node.text else ""
 
 
-def arxiv_search(query: str = "", max_results: int = 5, sort_by: str = "relevance") -> dict[str, Any]:
+def _date_to_arxiv_bound(value: str | None, *, end_of_day: bool) -> str | None:
+    cleaned = (value or "").strip()
+    if not cleaned:
+        return None
+    match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", cleaned)
+    if not match:
+        return None
+    suffix = "2359" if end_of_day else "0000"
+    return "".join(match.groups()) + suffix
+
+
+def _submitted_date_clause(year: int | str | None, published_after: str | None, published_before: str | None) -> str:
+    start = _date_to_arxiv_bound(published_after, end_of_day=False)
+    end = _date_to_arxiv_bound(published_before, end_of_day=True)
+    if year and not (start or end):
+        year_int = int(year)
+        start = f"{year_int}01010000"
+        end = f"{year_int}12312359"
+    if not (start or end):
+        return ""
+    return f"submittedDate:[{start or '190001010000'} TO {end or '299912312359'}]"
+
+
+def _build_api_query(query: str, year: int | str | None, published_after: str | None, published_before: str | None) -> str:
+    base_query = _arxiv_search_query(query)
+    date_clause = _submitted_date_clause(year, published_after, published_before)
+    if base_query and date_clause:
+        return f"({base_query}) AND {date_clause}"
+    return base_query or date_clause
+
+
+def _within_requested_dates(item: dict[str, Any], year: int | str | None, published_after: str | None, published_before: str | None) -> bool:
+    published = str(item.get("published") or "")[:10]
+    if not published:
+        return False
+    if year and not published.startswith(f"{int(year):04d}-"):
+        return False
+    if published_after and published < published_after:
+        return False
+    if published_before and published > published_before:
+        return False
+    return True
+
+
+def arxiv_search(
+    query: str = "",
+    max_results: int = 5,
+    sort_by: str = "relevance",
+    year: int | str | None = None,
+    published_after: str | None = None,
+    published_before: str | None = None,
+) -> dict[str, Any]:
     try:
         max_results = max(1, min(int(max_results or 5), 10))
         sort_by = sort_by if sort_by in {"relevance", "lastUpdatedDate", "submittedDate"} else "relevance"
+        if year not in (None, ""):
+            year = int(year)
         params = {
-            "search_query": _arxiv_search_query(query),
+            "search_query": _build_api_query(query, year, published_after, published_before),
             "max_results": max_results,
             "sortBy": sort_by,
             "sortOrder": "descending",
@@ -99,9 +152,14 @@ def arxiv_search(query: str = "", max_results: int = 5, sort_by: str = "relevanc
                 "primary_category": primary.get("term") if primary is not None else None,
                 "categories": [cat.get("term") for cat in entry.findall("./atom:category", namespaces)],
             })
+        if year or published_after or published_before:
+            entries = [item for item in entries if _within_requested_dates(item, year, published_after, published_before)]
         return {
             "tool": "arxiv_search",
             "query": query,
+            "year": year,
+            "published_after": published_after,
+            "published_before": published_before,
             "api_query": params["search_query"],
             "total_results": int(total_node.text) if total_node is not None and total_node.text else None,
             "items": entries,
@@ -109,4 +167,3 @@ def arxiv_search(query: str = "", max_results: int = 5, sort_by: str = "relevanc
         }
     except Exception as exc:
         return err("arxiv_search", exc)
-

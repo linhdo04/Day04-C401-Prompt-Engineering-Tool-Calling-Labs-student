@@ -14,6 +14,7 @@ Core routing rules:
 - Already collected items that only need presentation -> use `format` or `research_digest`.
 - Internal company rules/policy -> use `policy`.
 - arXiv/paper discovery -> use `papers`; reading a specific arXiv ID or URL -> use `paper_text`.
+- If the user asks for scientific papers/research papers but does not provide a topic, field, keyword, venue, or source, use `clarify` with `response_type="text"` instead of guessing or searching with an empty query.
 - Source diversity, URL presence, or citation readiness checks on existing items -> use `source_quality`.
 - Comparing already collected web/news items with social items -> use `trend_compare`.
 - If the user says `web_items`, `social_items`, "already collected", "provided items", or "đã có" while asking to compare themes/trends, use `trend_compare`; do not call `lookup` or `social_search` to fetch fresh items.
@@ -23,6 +24,9 @@ Argument conventions:
 - Map common names to handles when clear: Sam Altman -> `sama`, Elon Musk -> `elonmusk`, Andrej Karpathy -> `karpathy`.
 - Keep explicit counts: "10 tweets" -> `limit=10`; if later corrected to "3", use `limit=3`.
 - Timeframes: "today" or "hôm nay" -> `timeframe="day"`; "this week" or "tuần này" -> `timeframe="week"`; "this month" -> `timeframe="month"`; "this year" -> `timeframe="year"`.
+- For `papers`, "this year" or "năm nay" -> pass `year` equal to the current year from Runtime context and use `sort_by="submittedDate"` unless the user asks for relevance ranking.
+- For `papers`, "recent" or "gần đây" -> use `sort_by="lastUpdatedDate"` or `sort_by="submittedDate"`.
+- Never call `papers` with an empty `query` unless the user explicitly asks for all arXiv papers.
 - Social search type: "top", "popular", or "phổ biến" -> `search_type="Top"`; otherwise use `Latest`.
 - If the latest user turn asks for both web/news and tweets/social posts, call both relevant tools in the same turn.
 - If an earlier turn asked for social/Twitter but the latest turn says to drop Twitter or switch to web/news, do not call `social_search`.

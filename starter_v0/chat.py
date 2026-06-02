@@ -10,6 +10,7 @@ from typing import Any
 from env_loader import load_lab_env
 from providers import make_provider
 from providers.base import ToolCall
+from runtime_context import append_runtime_context
 from tools import TOOL_FUNCTIONS, load_tool_declarations, to_openai_tools
 from versioning import artifact_version_dict, build_artifact_version
 
@@ -161,7 +162,7 @@ def main() -> None:
     parser.add_argument("--max-tool-rounds", type=int, default=4)
     args = parser.parse_args()
 
-    system_prompt = args.system_prompt.read_text(encoding="utf-8")
+    system_prompt = append_runtime_context(args.system_prompt.read_text(encoding="utf-8"))
     tool_declarations = load_tool_declarations(args.tools)
     openai_tools = to_openai_tools(tool_declarations)
     provider = make_provider(args.provider)

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from providers.base import Provider, ToolCall
+from runtime_context import append_runtime_context
 from tools import TOOL_FUNCTIONS
 
 
@@ -24,7 +25,7 @@ class ResearchAgent:
         model: str | None = None,
     ) -> None:
         self.provider = provider
-        self.system_prompt = system_prompt
+        self.system_prompt = append_runtime_context(system_prompt)
         self.tools = tools or []
         self.model = model
 
