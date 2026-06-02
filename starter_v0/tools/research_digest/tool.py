@@ -5,55 +5,50 @@ from typing import Any
 from tools._shared import domain
 
 
-def _clean(text: Any, fallback: str = "") -> str:
-    value = str(text or fallback).strip().replace("\n", " ")
-    return " ".join(value.split())
+def _clean(value: Any) -> str:
+    return str(value or "").strip().replace("\n", " ")
 
 
-def _source(item: dict[str, Any]) -> str:
+def _citation(item: dict[str, Any]) -> str:
     url = _clean(item.get("url"))
-    source = _clean(item.get("source")) or domain(url) or "unknown source"
+    source = _clean(item.get("source")) or domain(url) or "source"
     return f"[{source}]({url})" if url else source
 
 
-def research_digest(
+def build_research_digest(
     items: list[dict[str, Any]] | None = None,
     headline: str = "Research brief",
     audience: str = "general",
     max_items: int = 5,
 ) -> dict[str, Any]:
-    items = list(items or [])
-    limit = max(1, int(max_items or 5))
+    items = items or []
+    try:
+        limit = max(1, int(max_items or 5))
+    except (TypeError, ValueError):
+        limit = 5
     selected = items[:limit]
 
-    caveats: list[str] = []
+    lines = [f"# {_clean(headline) or 'Research brief'}", "", f"Audience: {_clean(audience) or 'general'}", ""]
+    cited_count = 0
+
     if not selected:
-        caveats.append("No evidence items were provided.")
-    if len(items) > len(selected):
-        caveats.append(f"Trimmed {len(items) - len(selected)} extra item(s).")
-
-    sources = {_clean(item.get("source")) or domain(_clean(item.get("url"))) for item in selected}
-    sources.discard("")
-    if len(sources) < 2 and len(selected) > 1:
-        caveats.append("Source diversity is limited.")
-
-    title = _clean(headline, "Research brief")
-    parts = [f"# {title}", "", f"Audience: {audience or 'general'}", "", "## Key findings"]
-    for index, item in enumerate(selected, start=1):
-        summary = _clean(item.get("summary")) or _clean(item.get("title"), "Untitled item")
-        if len(summary) > 260:
-            summary = summary[:257] + "..."
-        parts.append(f"{index}. {summary} - {_source(item)}")
-
-    parts += ["", "## Caveats"]
-    parts.extend(f"- {caveat}" for caveat in (caveats or ["No major caveats detected from supplied metadata."]))
+        lines.append("No evidence items were provided.")
+    else:
+        lines.append("## Key points")
+        for item in selected:
+            title = _clean(item.get("title"))
+            summary = _clean(item.get("summary"))
+            text = summary or title or "Untitled item"
+            if len(text) > 240:
+                text = text[:237] + "..."
+            citation = _citation(item)
+            if item.get("url") or item.get("source"):
+                cited_count += 1
+            lines.append(f"- {text} - {citation}")
 
     return {
         "tool": "research_digest",
-        "headline": title,
-        "audience": audience or "general",
-        "markdown": "\n".join(parts).strip(),
+        "markdown": "\n".join(lines),
         "item_count": len(selected),
-        "source_count": len(sources),
-        "caveats": caveats,
+        "cited_count": cited_count,
     }

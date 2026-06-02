@@ -14,10 +14,10 @@ from .timeline.tool import get_user_tweets
 from .fetch.tool import read_url
 from .format.tool import render_digest
 from .policy.tool import search_company_policy
+from .research_digest.tool import build_research_digest
 from .social_search.tool import search_tweets
 from .send.tool import send_telegram
 from .lookup.tool import web_search
-from .research_digest.tool import research_digest
 from .source_quality.tool import source_quality
 from .telegram_preview.tool import telegram_preview
 from .trend_compare.tool import trend_compare
@@ -35,11 +35,11 @@ TOOL_FUNCTIONS = {
     "lookup": web_search,
     "fetch": read_url,
     "format": render_digest,
+    "research_digest": build_research_digest,
     "send": send_telegram,
     "policy": search_company_policy,
     "papers": arxiv_search,
     "paper_text": get_arxiv_paper_text,
-    "research_digest": research_digest,
     "source_quality": source_quality,
     "trend_compare": trend_compare,
     "telegram_preview": telegram_preview,

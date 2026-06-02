@@ -1,11 +1,76 @@
 {
   "dataset_id": "day04_v2_research_group",
-  "dataset_role": "team_authored_bonus_eval",
-  "description": "Team-authored cases covering bonus research workflow tools, Telegram preview/confirmation, and multi-turn context handling.",
+  "dataset_role": "group",
+  "description": "Team-authored eval cases for a research/news/social monitoring agent with policy, paper, digest, source-quality, trend-compare, and Telegram preview/confirmation workflows.",
+  "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
   "cases": [
     {
-      "id": "G01_research_digest_single",
+      "id": "G01_policy_data_privacy",
       "phase": "B",
+      "suite": "group",
+      "query": "Theo policy nội bộ, khi dùng dữ liệu khách hàng trong AI research thì cần lưu ý gì về privacy?",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "policy",
+            "args": {
+              "policy_area": "data_privacy"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Internal company policy questions should use policy, not web lookup."
+      }
+    },
+    {
+      "id": "G02_papers_discovery",
+      "phase": "B",
+      "suite": "group",
+      "query": "Tìm 3 paper arXiv gần đây về RAG evaluation.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "papers",
+            "args": {
+              "query": "RAG evaluation",
+              "max_results": 3,
+              "sort_by": "lastUpdatedDate"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Paper discovery should use papers with count and recency sorting."
+      }
+    },
+    {
+      "id": "G03_paper_text_specific_id",
+      "phase": "B",
+      "suite": "group",
+      "query": "Đọc 2 trang đầu của paper arXiv 1706.03762 giúp mình.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "paper_text",
+            "args": {
+              "arxiv_url": "1706.03762",
+              "max_pages": 2
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Specific arXiv ID should use paper_text, not papers search."
+      }
+    },
+    {
+      "id": "G04_research_digest_existing_items",
+      "phase": "B",
+      "suite": "group",
       "query": "Từ các item đã có, tạo research digest cho executives với headline 'AI market brief': item 1 title OpenAI launches model source openai.com url https://openai.com/news summary New model launch; item 2 title Anthropic research source anthropic.com url https://anthropic.com/research summary Safety research update.",
       "failure_type": "wrong_tool",
       "expect": {
@@ -24,48 +89,9 @@
       }
     },
     {
-      "id": "G02_source_quality_single",
+      "id": "G05_telegram_preview_not_send",
       "phase": "B",
-      "query": "Kiểm tra chất lượng nguồn cho 3 item đã thu thập, cần ít nhất 3 nguồn khác nhau và bắt buộc có URL.",
-      "failure_type": "wrong_tool",
-      "expect": {
-        "tool_calls": [
-          {
-            "name": "source_quality",
-            "args": {
-              "min_sources": 3,
-              "require_urls": true
-            }
-          }
-        ]
-      },
-      "metadata": {
-        "what_it_tests": "Citation readiness/source-diversity request should use source_quality."
-      }
-    },
-    {
-      "id": "G03_trend_compare_single",
-      "phase": "B",
-      "query": "So sánh trend giữa web_items và social_items đã có về chủ đề robotics, lấy top 4 theme.",
-      "failure_type": "wrong_tool",
-      "expect": {
-        "tool_calls": [
-          {
-            "name": "trend_compare",
-            "args": {
-              "topic": "robotics",
-              "top_k": 4
-            }
-          }
-        ]
-      },
-      "metadata": {
-        "what_it_tests": "Comparing already collected web and social evidence should use trend_compare."
-      }
-    },
-    {
-      "id": "G04_telegram_preview_single",
-      "phase": "B",
+      "suite": "group",
       "query": "Tạo preview Telegram từ markdown này, chưa gửi: **AI update**\\n- OpenAI release. Tiêu đề là Daily AI, giới hạn 500 ký tự.",
       "failure_type": "wrong_boundary",
       "expect": {
@@ -84,95 +110,115 @@
       }
     },
     {
-      "id": "G05_send_confirmation_single",
+      "id": "G06_multiturn_policy_area_correction",
       "phase": "B",
-      "query": "Gửi bản tin AI này lên Telegram giúp mình.",
-      "failure_type": "wrong_boundary",
-      "expect": {
-        "tool_calls": [
-          {
-            "name": "clarify",
-            "args": {
-              "response_type": "yes_no"
-            }
-          }
-        ]
-      },
-      "metadata": {
-        "what_it_tests": "Telegram send action requires confirmation before send."
-      }
-    },
-    {
-      "id": "G06_multiturn_digest_missing_items",
-      "phase": "B",
+      "suite": "group",
       "turns": [
         {
           "role": "user",
-          "content": "Tạo research digest cho executives"
+          "content": "Tra policy nội bộ về citation"
         },
         {
           "role": "user",
-          "content": "Mình chưa đưa item nào cả"
+          "content": "À cụ thể là external publishing"
         },
         {
           "role": "user",
-          "content": "Vậy hỏi mình cần cung cấp item gì"
+          "content": "Vẫn hỏi về citation khi publish ra ngoài"
         }
       ],
-      "failure_type": "missing_info",
+      "failure_type": "wrong_arg_value",
       "expect": {
         "tool_calls": [
           {
-            "name": "clarify",
+            "name": "policy",
             "args": {
-              "response_type": "text"
+              "policy_area": "external_publishing"
             }
           }
         ]
       },
       "metadata": {
-        "what_it_tests": "Missing item list for local digest should ask for evidence instead of inventing items."
+        "what_it_tests": "Later correction should switch policy area while keeping the citation/publishing topic."
       }
     },
     {
-      "id": "G07_multiturn_send_to_preview",
+      "id": "G07_multiturn_switch_social_to_web",
       "phase": "B",
+      "suite": "group",
       "turns": [
         {
           "role": "user",
-          "content": "Đăng bản tin này lên Telegram"
+          "content": "Mọi người nói gì về Anthropic trên Twitter?"
         },
         {
           "role": "user",
-          "content": "Khoan, chỉ tạo preview thôi"
+          "content": "Bỏ Twitter, tìm tin tức web thôi"
         },
         {
           "role": "user",
-          "content": "Dùng tiêu đề Daily AI và đừng gửi"
+          "content": "Vẫn chủ đề Anthropic và là tin hôm nay"
         }
       ],
-      "failure_type": "wrong_boundary",
+      "failure_type": "wrong_tool",
       "expect": {
         "tool_calls": [
           {
-            "name": "telegram_preview",
+            "name": "lookup",
             "args": {
-              "title": "Daily AI"
+              "query": "Anthropic",
+              "topic": "news",
+              "timeframe": "day"
             }
           }
         ]
       },
       "metadata": {
-        "what_it_tests": "Latest-turn correction from send to preview should override prior send request."
+        "what_it_tests": "Latest-turn source switch should use web news lookup, not social_search."
       }
     },
     {
-      "id": "G08_multiturn_compare_topic_carryover",
+      "id": "G08_multiturn_source_quality_constraints",
       "phase": "B",
+      "suite": "group",
       "turns": [
         {
           "role": "user",
-          "content": "So sánh web_items và social_items đã có về OpenAI"
+          "content": "Kiểm tra source quality cho các item: OpenAI url https://openai.com source openai.com; Anthropic url https://anthropic.com source anthropic.com; DeepMind url https://deepmind.google source deepmind.google"
+        },
+        {
+          "role": "user",
+          "content": "Ít nhất 3 nguồn khác nhau"
+        },
+        {
+          "role": "user",
+          "content": "Và URL là bắt buộc"
+        }
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "source_quality",
+            "args": {
+              "min_sources": 3,
+              "require_urls": true
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Carry source-quality constraints across turns."
+      }
+    },
+    {
+      "id": "G09_multiturn_compare_topic_carryover",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {
+          "role": "user",
+          "content": "So sánh web_items và social_items đã có về OpenAI: web item title OpenAI news source openai.com url https://openai.com/news; social item title OpenAI discussion source twitter url https://twitter.com/search?q=OpenAI"
         },
         {
           "role": "user",
@@ -180,7 +226,7 @@
         },
         {
           "role": "user",
-          "content": "Vẫn chủ đề OpenAI nhé"
+          "content": "Vẫn chủ đề OpenAI nhé, dùng các web_items/social_items đã cung cấp và không tìm mới"
         }
       ],
       "failure_type": "wrong_arg_value",
@@ -200,41 +246,9 @@
       }
     },
     {
-      "id": "G09_multiturn_source_quality_constraints",
-      "phase": "B",
-      "turns": [
-        {
-          "role": "user",
-          "content": "Kiểm tra source quality cho các item đã có"
-        },
-        {
-          "role": "user",
-          "content": "Ít nhất 4 nguồn khác nhau"
-        },
-        {
-          "role": "user",
-          "content": "Và URL là bắt buộc"
-        }
-      ],
-      "failure_type": "wrong_arg_value",
-      "expect": {
-        "tool_calls": [
-          {
-            "name": "source_quality",
-            "args": {
-              "min_sources": 4,
-              "require_urls": true
-            }
-          }
-        ]
-      },
-      "metadata": {
-        "what_it_tests": "Carry source-quality constraints across turns."
-      }
-    },
-    {
       "id": "G10_multiturn_confirm_before_send",
       "phase": "B",
+      "suite": "group",
       "turns": [
         {
           "role": "user",

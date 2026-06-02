@@ -1,73 +1,92 @@
-# Day 04 Lab v2 Report — Research Agent
+# Day 04 Lab v2 Report - Research Agent
 
 ## Team
 
-- Team: bachbach
-- Members: bachbach
-- Provider/model: OpenRouter target `openai/gpt-4o-mini`; Gemini fallback `gemini-3.5-flash`
+- Team: 4 zone 1
+- Members:
+  - Đào Xuân Bách - 2A202600640
+  - Đỗ Thiện Lĩnh - 2A202600775
+  - Dương Quang Minh - 2A202600686
+- Provider/model: OpenRouter, target model `openai/gpt-4o-mini`
 
 ## Final Metrics
 
-- Final version: v3
-- Final artifact_version: `v3+pf51dc1465fce+t333c9c9a7ed7`
-- Best base run file: `runs/v3_B_base_gemini_20260602T142804115713.json`
-- Base case accuracy: 1.0 on measured cases; 3 measured, 17 provider errors
-- Base tool routing accuracy: 1.0 on measured cases
-- Base argument accuracy: 1.0 on measured cases
-- Group eval run file: `runs/v3_B_group_gemini_20260602T142759056407.json`
-- Group eval accuracy: 1.0 on measured cases; 3 measured, 7 provider errors
-- OpenRouter base run file: `runs/v3_B_base_openrouter_20260602T143012008850.json` recorded provider errors because `OPENROUTER_API_KEY` is missing
-- OpenRouter group run file: `runs/v3_B_group_openrouter_20260602T142721094642.json` recorded provider errors because `OPENROUTER_API_KEY` is missing
-- Chat transcript file: created by `ui_streamlit.py` after the first UI turn; no completed live transcript exists yet
+- Final version: `v3`
+- Final artifact_version: `v3+p487b1fac43cd+t74517821ae3d`
+- Final prompt_hash: `487b1fac43cd94d7822def23e32052fc0c462133f21f5a050b50c994042acd55`
+- Final tools_hash: `74517821ae3d932ce70d3e89d16275d0cbb81181d2d06e41a7b5e56e1408ffd9`
+- Best base run: `runs/v3_B_base_openrouter_20260602T154433057497.json`
+- Base result: 20/20 passed, case_accuracy 1.00, routing 1.00, argument 1.00, multiturn 1.00, provider errors 0
+- Final group run: `runs/v3_B_group_openrouter_20260602T155049032867.json`
+- Group result: 10/10 passed, case_accuracy 1.00, routing 1.00, argument 1.00, multiturn 1.00, provider errors 0
+- Note: the final artifact hash above matches the current prompt/tools and the final group run. The best base run was recorded earlier in v3 before the final group-specific refinements.
 
 ## Version Evidence
 
-| Version | Changed Artifact | Hypothesis | Metric Before | Metric After | Run File |
-|---|---|---|---:|---:|---|
-| v0 | baseline attempt | OpenRouter baseline should establish starter behavior. Blocked because `.env` lacks `OPENROUTER_API_KEY`. | N/A | N/A | N/A |
-| v1 | `system_prompt.md` | Explicit routing, clarification, send confirmation, and multi-turn correction rules should improve tool choice and safety. | N/A | Gemini base measured cases 3/3 passed | `runs/v3_B_base_gemini_20260602T142804115713.json` |
-| v2 | `tools.yaml` | Clearer descriptions and argument conventions should reduce wrong-tool and wrong-arg failures. | N/A | 14 declared tools all implemented; group measured cases 3/3 passed | `runs/v3_B_group_gemini_20260602T142759056407.json` |
-| v3 | new tools, group eval, UI | Bonus workflow tools and guarded UI should satisfy bonus scope without automated send side effects. | N/A | Direct tool tests and compile checks passed | local validation |
+| Version | Suite | Changed Artifact | Hypothesis | Metric Before | Metric After | Run File |
+|---|---|---|---|---|---|---|
+| v0 | base | baseline | Starter artifacts should expose routing and argument weaknesses before targeted changes. | N/A | 14/20 passed, accuracy 0.70, routing 0.75, argument 0.70 | `runs/v0_B_base_openrouter_20260602T150904214592.json` |
+| v1 | base | `system_prompt.md` | Explicit scope, routing, clarification, confirmation, and multi-turn rules should reduce unsafe guessing and wrong tools. | v0 base accuracy 0.70 | 18/20 passed, accuracy 0.90, routing 0.95, argument 0.90 | `runs/v1_B_base_openrouter_20260602T152420568529.json` |
+| v2 | base | `tools.yaml` | More precise tool descriptions and required args should remove remaining base failures. | v1 base accuracy 0.90 | 20/20 passed, accuracy 1.00, routing 1.00, argument 1.00 | `runs/v2_B_base_openrouter_20260602T154019970526.json` |
+| v2 | group | `data/eval_group.json` | Group cases should test transfer to policy, papers, local analyzers, Telegram preview, and multi-turn corrections. | v2 base accuracy 1.00 | 9/10 passed, accuracy 0.90, multiturn 0.80 | `runs/v2_B_group_openrouter_20260602T154759214854.json` |
+| v3 | base | `system_prompt.md`, `tools.yaml` | Group/local-tool refinements should preserve perfect base performance. | v2 base accuracy 1.00 | 20/20 passed, accuracy 1.00, routing 1.00, argument 1.00 | `runs/v3_B_base_openrouter_20260602T154433057497.json` |
+| v3 | group | `system_prompt.md`, `tools.yaml`, `data/eval_group.json`, `tools/research_digest` | Stronger local-tool boundaries should fix the remaining group miss. | v2 group accuracy 0.90 | 10/10 passed, accuracy 1.00, routing 1.00, argument 1.00 | `runs/v3_B_group_openrouter_20260602T155049032867.json` |
 
 ## Failure Analysis
 
-| Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
-|---|---|---|---|---|
-| OpenRouter all attempted cases | provider_error | none | `OPENROUTER_API_KEY` is absent from `.env`, so provider completion cannot start. | Add `OPENROUTER_API_KEY` and rerun v0-v3 evals. |
-| Gemini unmeasured base/group cases | provider_error | none | Gemini free-tier quota/high-demand errors: 429 `RESOURCE_EXHAUSTED` and 503 `UNAVAILABLE`. | Rerun after quota reset or use OpenRouter/OpenAI with a valid key. |
+| Run | Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
+|---|---|---|---|---|---|
+| v0 base | R08_out_of_scope | out_of_scope | `send` | Math answer was treated as a send action instead of no tool. | Added scope boundary: out-of-domain math/coding should answer without tools. |
+| v0 base | R10_missing_handle | missing_info | `timeline(sama)` | Agent guessed a handle when the user did not provide an account. | Added clarify rule for missing account/handle. |
+| v0 base | R11_missing_url | missing_info | `fetch(example.com/article)` | Agent guessed a URL for "this article". | Added clarify rule for missing URL. |
+| v0 base | R12_confirm_before_send | wrong_boundary | `send` | Telegram send happened without explicit confirmation. | Added `clarify` yes/no confirmation boundary before `send`. |
+| v0 base | R13_parallel_web_and_tweets | wrong_arg_value | `lookup`, `social_search` | Web/news args used `query=AI news` and missed `topic=news`. | Added argument conventions for news topic/timeframe and multi-tool requests. |
+| v0 base | R14_out_of_scope_coding | out_of_scope | `send` | Coding answer was routed through send. | Added no-tool boundary for coding/meta/out-of-scope tasks. |
+| v1 base | R10_missing_handle | missing_info | `social_search(query="")` | Missing account still caused an empty social search. | Updated prompt/tool descriptions: latest tweets without account/topic requires `clarify`. |
+| v1 base | R12_confirm_before_send | wrong_boundary | `clarify(response_type=text)` | Agent asked for content instead of yes/no send confirmation. | Made `response_type=yes_no` explicit for send/post/publish. |
+| v2 group | G09_multiturn_compare_topic_carryover | wrong_arg_value | `lookup`, `social_search` | Existing `web_items/social_items` comparison fetched fresh data instead of using `trend_compare`. | Added rules for existing items, `web_items`, `social_items`, and `trend_compare` with carried `topic/top_k`. |
 
 ## Team Eval Cases
 
-| Case ID | What It Tests | Expected Tool/Behavior | Result |
+| Case ID | What It Tests | Expected Tool/Behavior | Final Result |
 |---|---|---|---|
-| G01 | Research digest from already collected evidence | `research_digest` | PASS on Gemini |
-| G02 | Source-diversity/citation readiness | `source_quality` | Provider error on Gemini |
-| G03 | Web/social trend comparison | `trend_compare` | Provider error on Gemini |
-| G04 | Telegram preview without sending | `telegram_preview` | PASS on Gemini |
-| G05 | Send boundary requires confirmation | `clarify` yes/no | Provider error on Gemini |
-| G06 | Missing digest items in multi-turn context | `clarify` text | PASS on Gemini |
-| G07 | Correction from send to preview | `telegram_preview` | Provider error on Gemini |
-| G08 | Carry topic/top_k into comparison | `trend_compare` | Provider error on Gemini |
-| G09 | Carry source-quality constraints | `source_quality` | Provider error on Gemini |
-| G10 | Confirmation before send | `clarify` yes/no | Provider error on Gemini |
+| G01_policy_data_privacy | Internal company policy questions should use local policy search. | `policy` | PASS |
+| G02_papers_discovery | Paper discovery should use arXiv search with count and recency sorting. | `papers` | PASS |
+| G03_paper_text_specific_id | Specific arXiv ID should read/extract paper text, not search papers. | `paper_text` | PASS |
+| G04_research_digest_existing_items | Already collected evidence should be formatted into a digest, not fetched again. | `research_digest` | PASS |
+| G05_telegram_preview_not_send | Telegram preview/draft should not call the side-effecting send tool. | `telegram_preview` | PASS |
+| G06_multiturn_policy_area_correction | Later correction should switch policy area while keeping context. | `policy` | PASS |
+| G07_multiturn_switch_social_to_web | Latest-turn switch should use web news, not social search. | `lookup` | PASS |
+| G08_multiturn_source_quality_constraints | Source-quality constraints should carry across turns. | `source_quality` | PASS |
+| G09_multiturn_compare_topic_carryover | Existing web/social items should be compared with carried topic/top_k. | `trend_compare` | PASS |
+| G10_multiturn_confirm_before_send | Send action should ask yes/no confirmation before sending. | `clarify(response_type=yes_no)` | PASS |
+
+## Tool And Bonus Evidence
+
+| Item | Evidence | Status |
+|---|---|---|
+| Tool declarations | `artifacts/tools.yaml` declares 14 tools. | PASS |
+| Tool registry | `tools/__init__.py` registers all 14 declared tools; no missing registry entries. | PASS |
+| Team-added tools | `research_digest`, `source_quality`, `trend_compare`, `telegram_preview` each include `tool.py` and `TOOL.md`. | PASS |
+| Bonus: more than 3 new tools | Four team-added tools are present and registered. | PASS |
+| Bonus: UI | `ui_streamlit.py` exists and `streamlit` is listed in `requirements.txt`. | PASS |
+| Bonus: guarded Telegram send | `send` refuses unconfirmed sends; prompt and tool declarations require confirmation first. | PASS |
 
 ## Live Chat Evidence
 
-| Turn | User Request | Tool Calls | Version Evidence | Outcome |
-|---|---|---|---|---|
-| UI pending | Run `python3 -m streamlit run ui_streamlit.py` and submit a first turn | Logged in `transcripts/*.transcript.json` | v3 artifact hashes | Not run yet because OpenRouter key is missing and Gemini quota was exhausted during eval. |
-
-## Bonus Evidence
-
-| Bonus | Evidence File | What Worked | Risk / Guardrail |
-|---|---|---|---|
-| Four new tools | `tools/research_digest`, `tools/source_quality`, `tools/trend_compare`, `tools/telegram_preview` | Direct local tool tests passed; all tools registered in `tools.yaml` and `tools/__init__.py`. | Tools are local analyzers/formatters only and do not fetch new evidence. |
-| send (Telegram) | `tools/send/tool.py`, `ui_streamlit.py` | Existing `send` refuses unconfirmed sends; UI requires a checked confirmation before calling `send(..., confirmed=True)`. | Automated eval cases expect `clarify` or `telegram_preview`, not `send`. |
-| UI | `ui_streamlit.py` | Streamlit operator surface supports provider/model/version selection, chat, tool traces, Telegram preview/send, and transcript JSON. | Needs a working provider key/quota for live chat. |
+| Requirement | Evidence | Status |
+|---|---|---|
+| Live transcript JSON | `transcripts/v3_openrouter_streamlit_20260602T161451876447.transcript.json` exists with 1 Streamlit turn. | PASS |
+| Streamlit transcript support | The recorded turn used OpenRouter v3 and called `lookup` for a live AI-news request. | PASS |
 
 ## Reflection
 
-- `system_prompt.md` fixes the agent policy: when to clarify, when not to use tools, how to handle send confirmation, and how to interpret multi-turn corrections.
-- `tools.yaml` fixes model-facing affordances: exact routing descriptions, handle mappings, timeframe conventions, and local-tool boundaries.
-- Provider failures need manual review because they are not routing failures.
-- Next improvement: add `OPENROUTER_API_KEY`, rerun true v0-v3 OpenRouter evals, then update metrics with full measured runs.
+- Baseline v0 exposed the intended weak spots: guessing missing handles/URLs, unsafe send behavior, out-of-scope tool calls, and loose news arguments.
+- v1 improved behavior mainly through system-level policy: clarification, no-tool boundaries, confirmation, and multi-turn correction rules.
+- v2 made the tool declarations precise enough for perfect base eval accuracy.
+- Group eval surfaced one remaining boundary issue: existing `web_items/social_items` should be analyzed locally rather than refetched.
+- v3 fixed that local-tool boundary and reached 100% measured accuracy on both the recorded base and final group suites.
+
+## Remaining Work
+
+- If artifacts change again after this report, rerun base and group evals so hashes and metrics stay aligned.

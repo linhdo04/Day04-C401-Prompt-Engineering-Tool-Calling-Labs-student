@@ -1,16 +1,17 @@
 tools:
+  # ---------------- Core tools ----------------
   - name: clarify
-    description: "Ask the user for missing required information or explicit yes/no confirmation. Use this instead of guessing an account, URL, topic, item list, or send approval."
+    description: "Ask the user for missing required information or explicit yes/no confirmation. Use instead of guessing an account, URL, topic, item list, or send approval."
     parameters:
       type: object
       properties:
         question: {type: string, default: "", description: "One concise question to unblock the request."}
         response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Use yes_no for send/post/publish confirmation; text for missing URL/account/topic/items."}
         options: {type: array, default: [], items: {type: string}, description: "Choices when response_type is choice."}
-      required: [question]
+      required: [question, response_type]
 
   - name: timeline
-    description: "Get recent tweets/posts from one specific account. Use when the user asks for tweets by a person/account. Map Sam Altman to sama, Elon Musk to elonmusk, Andrej Karpathy to karpathy. Do not use for topic searches."
+    description: "Get recent tweets/posts from one specific account. Use when the user asks for tweets by a person/account. Map Sam Altman to sama, Elon Musk to elonmusk, Andrej Karpathy to karpathy. Do not use for topic searches. If the user asks for latest tweets without an account/person, use clarify."
     parameters:
       type: object
       properties:
@@ -19,7 +20,7 @@ tools:
       required: [screenname]
 
   - name: social_search
-    description: "Search tweets/social posts by topic, keyword, hashtag, or public discussion. Use Top for popular/top/phổ biến results; otherwise Latest. Do not use for one user's timeline."
+    description: "Search tweets/social posts by topic, keyword, hashtag, or public discussion. Use Top for popular/top/phổ biến results; otherwise Latest. Do not use for one user's timeline, do not call with an empty query, and do not use if the latest turn says to drop Twitter/social or switch to web/news."
     parameters:
       type: object
       properties:
@@ -48,7 +49,7 @@ tools:
       required: [url]
 
   - name: format
-    description: "Format already collected items into markdown. This tool does not fetch, search, verify, or create new facts."
+    description: "Format already collected items into markdown. This tool does not fetch, search, verify, or create new facts. Use only when items are already available."
     parameters:
       type: object
       properties:
@@ -68,8 +69,9 @@ tools:
         headline: {type: string, default: "", description: "Digest headline."}
       required: [items, template]
 
+  # ---------------- Bonus tools ----------------
   - name: send
-    description: "Send text to the configured Telegram channel. This is the only real send action and has side effects. Call only after the latest user turn explicitly confirms sending the exact text; otherwise use clarify yes_no or telegram_preview."
+    description: "Send text to the configured Telegram channel. This is the only real send action and has side effects. Call only after the latest user turn explicitly confirms sending the exact text; otherwise use clarify with response_type=yes_no or telegram_preview for preview-only requests."
     parameters:
       type: object
       properties:
@@ -107,8 +109,9 @@ tools:
         max_chars: {type: integer, default: 8000, description: "Maximum characters returned."}
       required: [arxiv_url]
 
+  # ---------------- Team-added tools ----------------
   - name: research_digest
-    description: "Create a concise cited research brief from already collected items. This local tool does not fetch live data; use lookup/social_search/fetch first when fresh evidence is needed."
+    description: "Create a concise cited research brief from already collected items. This local tool does not fetch live data, verify facts, or create new evidence; use lookup/social_search/fetch first when fresh evidence is needed."
     parameters:
       type: object
       properties:
@@ -129,7 +132,7 @@ tools:
       required: [items]
 
   - name: source_quality
-    description: "Assess source diversity, URL presence, and citation readiness for already collected items. This local analyzer does not fetch or verify facts."
+    description: "Assess source diversity, URL presence, and citation readiness for already collected items. This local analyzer does not fetch or verify facts, and should not replace lookup/fetch for fresh research."
     parameters:
       type: object
       properties:
@@ -149,7 +152,7 @@ tools:
       required: [items]
 
   - name: trend_compare
-    description: "Compare already collected web/news items and social items for one topic. This local analyzer does not fetch live data."
+    description: "Compare already collected web/news items and social items for one topic. Use when the user says web_items/social_items, already collected, provided items, existing items, or đã có. This local analyzer does not fetch live data; do not call lookup or social_search for the same comparison when items were supplied in current or earlier turns."
     parameters:
       type: object
       properties:
