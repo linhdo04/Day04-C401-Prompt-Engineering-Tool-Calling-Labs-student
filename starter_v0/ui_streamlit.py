@@ -109,6 +109,17 @@ div[data-testid="stChatMessage"] {
   box-shadow: none !important;
 }
 
+[data-testid="stChatInput"] textarea::placeholder {
+  color: var(--lab-muted) !important;
+}
+
+[data-testid="stChatInput"] textarea::selection,
+[data-testid="stChatInput"] [contenteditable="true"]::selection {
+  background: transparent;
+  color: inherit;
+}
+
+[data-testid="stChatInput"] [data-baseweb="textarea"],
 [data-testid="stChatInput"] [data-baseweb="base-input"] {
   background: transparent !important;
 }
