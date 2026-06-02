@@ -20,6 +20,147 @@ ARTIFACTS_DIR = ROOT / "artifacts"
 TRANSCRIPTS_DIR = ROOT / "transcripts"
 load_lab_env(ROOT)
 
+PROVIDER_LABELS = {
+    "openrouter": "OpenRouter",
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "gemini": "Gemini",
+}
+
+
+def inject_styles() -> None:
+    st.markdown(
+        """
+<style>
+:root {
+  --lab-bg: #f6f7fb;
+  --lab-surface: #ffffff;
+  --lab-ink: #172033;
+  --lab-muted: #667085;
+  --lab-border: #e3e8ef;
+  --lab-accent: #2563eb;
+}
+
+.stApp {
+  background: var(--lab-bg);
+  color: var(--lab-ink);
+}
+
+[data-testid="stHeader"] {
+  background: rgba(246, 247, 251, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"] {
+  display: none;
+}
+
+.block-container {
+  max-width: 1280px;
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  letter-spacing: 0;
+  margin-bottom: 0.15rem;
+}
+
+h2, h3 {
+  letter-spacing: 0;
+}
+
+[data-testid="stSidebar"] {
+  background: var(--lab-surface);
+  border-right: 1px solid var(--lab-border);
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] label,
+.stCaptionContainer {
+  color: var(--lab-muted);
+}
+
+div[data-testid="stChatMessage"] {
+  background: var(--lab-surface);
+  border: 1px solid var(--lab-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+[data-testid="stChatInput"] > div {
+  background: var(--lab-surface);
+  border: 1px solid var(--lab-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+[data-testid="stChatInput"] > div:focus-within {
+  border-color: var(--lab-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] [contenteditable="true"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+[data-testid="stChatInput"] [data-baseweb="base-input"] {
+  background: transparent !important;
+}
+
+.stTextInput input,
+.stTextArea textarea,
+.stNumberInput input,
+div[data-baseweb="select"] > div {
+  border-radius: 8px;
+}
+
+.stButton > button,
+.stDownloadButton > button {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--lab-border);
+}
+
+.stTabs [data-baseweb="tab"] {
+  border-radius: 8px 8px 0 0;
+  padding: 0.55rem 0.8rem;
+}
+
+.stTabs [aria-selected="true"] {
+  color: var(--lab-accent);
+}
+
+.stTabs [data-baseweb="tab-highlight"] {
+  background-color: var(--lab-accent);
+}
+
+div[data-testid="stExpander"] {
+  border-color: var(--lab-border);
+  border-radius: 8px;
+}
+
+div[data-testid="stAlert"] {
+  border-radius: 8px;
+}
+
+hr {
+  margin: 1.25rem 0;
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
 
 def now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
@@ -108,19 +249,34 @@ def extract_latest_preview(events: list[dict[str, Any]]) -> str:
 
 st.set_page_config(page_title="Research Agent Lab", page_icon=None, layout="wide")
 init_state()
+inject_styles()
 
 st.title("Research Agent Lab")
-st.caption("Tool-routing workspace with transcript evidence and guarded Telegram sending.")
+st.caption("Run tool-calling experiments, inspect the latest trace, and save transcript evidence.")
 
 with st.sidebar:
-    st.header("Run Settings")
-    provider_name = st.selectbox("Provider", ["openrouter", "openai", "anthropic", "gemini"], index=0)
-    version = st.text_input("Version", value="v3")
-    model_text = st.text_input("Model override", value="")
-    prompt_path = st.text_input("System prompt", value=str(ARTIFACTS_DIR / "system_prompt.md"))
-    tools_path = st.text_input("Tools YAML", value=str(ARTIFACTS_DIR / "tools.yaml"))
-    st.session_state.history_window = st.number_input("History turns", min_value=0, max_value=20, value=5)
-    st.session_state.max_tool_rounds = st.number_input("Tool rounds", min_value=1, max_value=8, value=4)
+    st.header("Setup")
+    provider_name = st.selectbox(
+        "Provider",
+        list(PROVIDER_LABELS.keys()),
+        index=0,
+        format_func=lambda value: PROVIDER_LABELS[value],
+    )
+    version = st.text_input("Version label", value="v3")
+
+    with st.expander("Advanced", expanded=False):
+        model_text = st.text_input("Model override", value="", placeholder="Use provider default")
+        prompt_path = st.text_input("System prompt", value=str(ARTIFACTS_DIR / "system_prompt.md"))
+        tools_path = st.text_input("Tools YAML", value=str(ARTIFACTS_DIR / "tools.yaml"))
+        st.session_state.history_window = st.number_input("History turns", min_value=0, max_value=20, value=5)
+        st.session_state.max_tool_rounds = st.number_input("Tool rounds", min_value=1, max_value=8, value=4)
+
+    prompt_exists = Path(prompt_path).exists()
+    tools_exists = Path(tools_path).exists()
+    if prompt_exists and tools_exists:
+        st.success("Artifacts ready.")
+    else:
+        st.warning("Check artifact paths in Advanced.")
 
     if st.button("Reset Chat", use_container_width=True):
         for key in ("history", "turns", "last_preview", "last_send_status", "transcript_path", "transcript_id", "created_at"):
@@ -135,7 +291,7 @@ model = model_text.strip() or None
 left, right = st.columns([0.62, 0.38], gap="large")
 
 with left:
-    st.subheader("Chat")
+    st.subheader("Conversation")
     for message in st.session_state.history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -145,22 +301,23 @@ with left:
         st.session_state.setdefault("created_at", now_iso())
         path = transcript_path(version, provider_name)
         try:
-            system_prompt = prompt_file.read_text(encoding="utf-8")
-            tool_declarations = load_tool_declarations(tools_file)
-            openai_tools = to_openai_tools(tool_declarations)
-            provider = make_provider(provider_name)
-            messages = [
-                {"role": "system", "content": system_prompt},
-                *trim_history(st.session_state.history, int(st.session_state.history_window)),
-                {"role": "user", "content": user_text},
-            ]
-            result = run_model_tool_loop(
-                provider=provider,
-                messages=messages,
-                tools=openai_tools,
-                model=model,
-                max_tool_rounds=int(st.session_state.max_tool_rounds),
-            )
+            with st.spinner("Running agent and tools..."):
+                system_prompt = prompt_file.read_text(encoding="utf-8")
+                tool_declarations = load_tool_declarations(tools_file)
+                openai_tools = to_openai_tools(tool_declarations)
+                provider = make_provider(provider_name)
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    *trim_history(st.session_state.history, int(st.session_state.history_window)),
+                    {"role": "user", "content": user_text},
+                ]
+                result = run_model_tool_loop(
+                    provider=provider,
+                    messages=messages,
+                    tools=openai_tools,
+                    model=model,
+                    max_tool_rounds=int(st.session_state.max_tool_rounds),
+                )
             assistant_text = result.get("assistant_text", "")
             turn_record = {
                 "turn_index": len(st.session_state.turns) + 1,
@@ -181,54 +338,64 @@ with left:
             st.error(f"{type(exc).__name__}: {exc}")
 
 with right:
-    st.subheader("Tool Trace")
-    latest_events: list[dict[str, Any]] = []
-    if st.session_state.turns:
-        latest_events = st.session_state.turns[-1].get("tool_events", [])
-    render_tool_events(latest_events)
+    trace_tab, telegram_tab, transcript_tab = st.tabs(["Trace", "Telegram", "Transcript"])
 
-    st.subheader("Telegram")
-    preview_text = st.text_area(
-        "Preview text",
-        value=st.session_state.last_preview,
-        height=220,
-        placeholder="Use telegram_preview, research_digest, or format to populate this area.",
-    )
-    if preview_text != st.session_state.last_preview:
-        st.session_state.last_preview = preview_text
+    with trace_tab:
+        st.subheader("Latest trace")
+        latest_events: list[dict[str, Any]] = []
+        if st.session_state.turns:
+            latest_events = st.session_state.turns[-1].get("tool_events", [])
+        render_tool_events(latest_events)
 
-    confirm = st.checkbox("I confirm this exact text should be sent to Telegram")
-    send_clicked = st.button("Send To Telegram", type="primary", disabled=not (confirm and preview_text.strip()), use_container_width=True)
-    if send_clicked:
-        result = TOOL_FUNCTIONS["send"](text=preview_text, confirmed=True)
-        st.session_state.last_send_status = result
-        send_event = {
-            "turn_index": len(st.session_state.turns) + 1,
-            "started_at": now_iso(),
-            "ended_at": now_iso(),
-            "user": "[ui_send_to_telegram]",
-            "status": "ui_action",
-            "assistant_text": "Telegram send requested from UI after explicit confirmation.",
-            "rounds": [],
-            "tool_events": [{"tool": "send", "args": {"confirmed": True}, "result": result}],
-        }
-        st.session_state.turns.append(send_event)
-        path = transcript_path(version, provider_name)
-        write_transcript(path, build_transcript(version, provider_name, model, prompt_file, tools_file))
-        st.rerun()
+    with telegram_tab:
+        st.subheader("Telegram draft")
+        preview_text = st.text_area(
+            "Preview text",
+            value=st.session_state.last_preview,
+            height=260,
+            placeholder="Use telegram_preview, research_digest, or format to populate this area.",
+        )
+        if preview_text != st.session_state.last_preview:
+            st.session_state.last_preview = preview_text
 
-    if st.session_state.last_send_status:
-        st.json(st.session_state.last_send_status)
-
-    st.subheader("Transcript")
-    if "transcript_path" in st.session_state:
-        st.code(str(st.session_state.transcript_path))
-        st.download_button(
-            "Download Transcript JSON",
-            data=Path(st.session_state.transcript_path).read_text(encoding="utf-8") if Path(st.session_state.transcript_path).exists() else "{}",
-            file_name=Path(st.session_state.transcript_path).name,
-            mime="application/json",
+        confirm = st.checkbox("I confirm this exact text should be sent to Telegram")
+        send_clicked = st.button(
+            "Send To Telegram",
+            type="primary",
+            disabled=not (confirm and preview_text.strip()),
             use_container_width=True,
         )
-    else:
-        st.caption("A transcript file will be created after the first turn.")
+        if send_clicked:
+            result = TOOL_FUNCTIONS["send"](text=preview_text, confirmed=True)
+            st.session_state.last_send_status = result
+            send_event = {
+                "turn_index": len(st.session_state.turns) + 1,
+                "started_at": now_iso(),
+                "ended_at": now_iso(),
+                "user": "[ui_send_to_telegram]",
+                "status": "ui_action",
+                "assistant_text": "Telegram send requested from UI after explicit confirmation.",
+                "rounds": [],
+                "tool_events": [{"tool": "send", "args": {"confirmed": True}, "result": result}],
+            }
+            st.session_state.turns.append(send_event)
+            path = transcript_path(version, provider_name)
+            write_transcript(path, build_transcript(version, provider_name, model, prompt_file, tools_file))
+            st.rerun()
+
+        if st.session_state.last_send_status:
+            st.json(st.session_state.last_send_status)
+
+    with transcript_tab:
+        st.subheader("Transcript file")
+        if "transcript_path" in st.session_state:
+            st.code(str(st.session_state.transcript_path))
+            st.download_button(
+                "Download Transcript JSON",
+                data=Path(st.session_state.transcript_path).read_text(encoding="utf-8") if Path(st.session_state.transcript_path).exists() else "{}",
+                file_name=Path(st.session_state.transcript_path).name,
+                mime="application/json",
+                use_container_width=True,
+            )
+        else:
+            st.caption("A transcript file will be created after the first turn.")
