@@ -68,6 +68,24 @@
       }
     },
     {
+      "id": "G03b_tech_claim_citation_lookup",
+      "phase": "B",
+      "suite": "group",
+      "query": "Theo tôi được biết, Llama 3 405B của Meta đạt được 88.6%, trích dẫn bài báo đó",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "args": {}
+          }
+        ]
+      },
+      "metadata": {
+        "what_it_tests": "Named model benchmark citation should search broader web/technical-report sources, not default to arXiv."
+      }
+    },
+    {
       "id": "G04_research_digest_existing_items",
       "phase": "B",
       "suite": "group",

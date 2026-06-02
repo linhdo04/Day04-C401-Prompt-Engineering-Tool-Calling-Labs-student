@@ -64,7 +64,9 @@ def tool_results_message(events: list[dict[str, Any]]) -> dict[str, str]:
             "TOOL_RESULTS_JSON:\n"
             f"{json_text(events, max_chars=24000)}\n\n"
             "Use only these tool results. If the user asked for a digest and the items are ready, "
-            "call the formatting tool. Otherwise answer the user directly with cited sources when available."
+            "call the formatting tool. If the user asked for an exact citation, quote, or verification and "
+            "a relevant URL is available, call fetch for that URL. Otherwise answer the user directly with "
+            "cited sources when available."
         ),
     }
 

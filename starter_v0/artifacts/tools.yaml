@@ -1,12 +1,12 @@
 tools:
   # ---------------- Core tools ----------------
   - name: clarify
-    description: "Ask the user for missing required information or explicit yes/no confirmation. Use instead of guessing an account, URL, topic, item list, or send approval."
+    description: "Ask the user for missing required information or explicit yes/no confirmation. For any send/post/publish/đăng/gửi/Telegram request, response_type MUST be yes_no, even if the content is vague. Use text only for non-send missing account, URL, topic, or item list."
     parameters:
       type: object
       properties:
         question: {type: string, default: "", description: "One concise question to unblock the request."}
-        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Use yes_no for send/post/publish confirmation; text for missing URL/account/topic/items."}
+        response_type: {type: string, enum: [yes_no, text, choice], default: "text", description: "Use yes_no for every send/post/publish/đăng/gửi/Telegram confirmation; use text only for non-send missing URL/account/topic/items."}
         options: {type: array, default: [], items: {type: string}, description: "Choices when response_type is choice."}
       required: [question, response_type]
 
@@ -30,18 +30,18 @@ tools:
       required: [query]
 
   - name: lookup
-    description: "Search the web for general or current news. Use topic=news for news/current events. Use timeframe=day for today/hôm nay, week for this week/tuần này, month for this month, year for this year."
+    description: "Search the web for science/technology research, official technical reports, model cards, benchmark claims, product/company releases, general research, or current news. Use topic=news for news/current events. Use timeframe=day for today/hôm nay, week for this week/tuần này, month for this month, year for this year."
     parameters:
       type: object
       properties:
-        query: {type: string, default: "", description: "Web search query. Keep it focused, e.g. AI, robotics, OpenAI."}
+        query: {type: string, default: "", description: "Web search query. Include distinctive terms from the user's claim, e.g. Llama 3 405B Meta 88.6 benchmark technical report."}
         topic: {type: string, enum: [general, news], default: "general", description: "news for current events/news requests; general otherwise."}
         timeframe: {type: string, enum: [day, week, month, year], default: "week", description: "day=today/hôm nay, week=tuần này/this week, month=this month, year=this year."}
         max_results: {type: integer, default: 5, description: "Number of web results."}
       required: [query]
 
   - name: fetch
-    description: "Read a specific URL supplied by the user. Use for exact links only. If the user says this article/bài này without a URL, use clarify instead."
+    description: "Read a specific URL supplied by the user or found in earlier tool results. Use when an exact link must be quoted, verified, or summarized. If the user says this article/bài này without a URL or prior matching lookup result, use clarify instead."
     parameters:
       type: object
       properties:
@@ -90,7 +90,7 @@ tools:
       required: [query]
 
   - name: papers
-    description: "Search arXiv for research papers/preprints by topic. Use for paper discovery, not for reading a specific arXiv ID. If the user says this year/năm nay, pass the current year in year. If they ask for recent/gần đây, use sort_by=lastUpdatedDate or submittedDate."
+    description: "Search arXiv for academic papers/preprints by topic. Use when the user explicitly asks for arXiv/preprints or academic paper discovery by topic; do not use as the default for named company models, benchmark claims, model cards, or technical reports. If the user says this year/năm nay, pass the current year in year. If they ask for recent/gần đây, use sort_by=lastUpdatedDate or submittedDate."
     parameters:
       type: object
       properties:
