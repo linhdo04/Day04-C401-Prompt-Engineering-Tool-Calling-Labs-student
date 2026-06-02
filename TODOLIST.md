@@ -1,4 +1,4 @@
-Người A — Setup & Chạy Eval
+Lĩnh — Setup & Chạy Eval
 
 - Cài môi trường, điền .env, chạy preflight cho đến khi pass
 - Chạy baseline (v0) và đọc file JSON kết quả để tìm lỗi
@@ -6,14 +6,14 @@ Người A — Setup & Chạy Eval
 - Chạy group eval và extension eval
 - Parse run log ra CSV bằng scripts/parse_runs.py
 
-Người B — Tối ưu Prompt & Tool Declaration
+Trung — Tối ưu Prompt & Tool Declaration
 
 - Phụ trách artifacts/system_prompt.md
 - Đọc failure từ run v0, đặt giả thuyết, sửa từng thứ một
 - Dẫn dắt 3 vòng tối ưu — mỗi version một giả thuyết
 - Điền artifacts/version_log.csv sau mỗ
 
-Người C — Viết Tool Mới + Eval Cases
+Bách — Viết Tool Mới + Eval Cases
 
 - Viết 1 tool mới bắt buộc (tools/<name>/tool.py + TOOL.md, đăng ký vào tools/__init__.py và tools.yaml)
 - Viết 10 eval case vào data/eval_group.json (5 single-turn, 5 multi-turn)
